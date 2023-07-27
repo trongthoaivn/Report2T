@@ -16,5 +16,5 @@ data = {"sex":"male"}
 report_instance = Report2T(input_path, output_path, OutputFormat.PDF, data)
 
 report_instance.add_style(StyleTrigger("test", "text:span", TriggerTarget.SELF, trigger_name_data))
-
+report_instance.add_image("Image1","./2672292.jpg")
 report_instance.exec_convert()

@@ -10,6 +10,7 @@ import re
 import copy
 import random
 import string
+import base64
 
 
 # Setting logger
@@ -36,6 +37,7 @@ class Report2T:
     """
     list style trigger
     """
+    image_list : List[tuple[str, str]] = []
     data = None
     """
     data 
@@ -71,7 +73,7 @@ class Report2T:
         """
         self.list_style_trigger.append(style_trigger)
         
-    def apply_style(self, xml_str : str) -> str:
+    def __apply_style(self, xml_str : str) -> str:
         """
         Apply style trigger
 
@@ -130,8 +132,61 @@ class Report2T:
             return str(xml_obj)
         except Exception as ex:
             raise Exception(f"Could not apply style trigger. (Exception={ex})")
+        
+    def add_image(self, image_name : str, file_path: str):
+        """
+        Add image 
+
+        Args:
+            image_name (str): image name
+            file_path (str): file path
+        """
+        self.image_list.append((image_name, file_path))
     
-    def bind_data(self):
+    def __replace_image(self, xml_str : str) -> str:
+        """
+        Replace image
+
+        Args:
+            xml_str (str): xml string
+
+        Raises:
+            Exception: Could not replace image.
+
+        Returns:
+            str: xml string replaced
+        """
+        
+        try:
+            # xml object
+            xml_obj = BeautifulSoup(xml_str , "xml")
+            # for loop in image list
+            for image in self.image_list:
+                image_name = image[0]
+                file_path = image[1]
+                if not os.path.exists(file_path):
+                    logging.warning(f"File path is not exist. (image_name={image_name},file_path={file_path})")
+                    break
+                # get xml draw frame object
+                draw_frame_target = xml_obj.find("draw:frame",attrs={"draw:name":f"{image_name}"})
+                if draw_frame_target is None:
+                    logging.warning(f"Image name is not exist. (image_name={image_name}")
+                    break
+                # read image
+                file = open(file_path,"rb")
+                # base64 encode
+                base64_data = base64.b64encode(file.read())
+                file.close()
+                # write image to draw frame
+                xml_bin_obj = draw_frame_target.find("office:binary-data")
+                xml_bin_obj.string = base64_data.decode("utf-8")
+            
+            # return xml content
+            return str(xml_obj)
+        except Exception as ex:
+            raise Exception(f"Could not replace image. (Exception={ex})")
+    
+    def __bind_data(self):
         """
         Binding data to template
 
@@ -166,7 +221,9 @@ class Report2T:
                 # binding data
                 template_content = template.render(data=self.data)
                 # apply style trigger
-                template_content = self.apply_style(template_content)
+                template_content = self.__apply_style(template_content)
+                # replace image
+                template_content = self.__replace_image(template_content)
                 # write xml file content
                 file.seek(0)
                 file.write(template_content)
@@ -188,7 +245,7 @@ class Report2T:
         command = ""
         try:
             # binding data to template
-            self.bind_data()      
+            self.__bind_data()      
             # execute convert command
             format  = {
                 "output_format" : self.convert_to_format,
@@ -199,6 +256,6 @@ class Report2T:
             self.helper.convert(command)
             
             # remove temp files
-            os.remove(self.input_file_path)
+            #os.remove(self.input_file_path)
         except Exception as ex :
             raise Exception(f"Could not execute convert . (command={command}, Exception={ex}))")
