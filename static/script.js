@@ -29,6 +29,8 @@ $(document).ready(function () {
     $("#tax").on("change", (e) => {
         calcTotal();
     })
+
+    $(document).on("ajaxSend", function () { blockUI() }).on("ajaxComplete", function () { $.unblockUI(); });
 });
 
 function calcTotal() {
@@ -44,19 +46,19 @@ function exportInvoice() {
 
     let data = {
         "invoice_date": new Date().toLocaleString(),
-        "invoice_num": "aaa",
+        "invoice_num": Math.floor(Math.random() * 10001),
         "product_name": "Abc",
-        "bank_num": "XXX-XXX-XXX",
+        "bank_num": "123-456-789",
         "bank_account_name": "ABC Company",
         "bank_name": "VCB",
-        "customer_name": "ABC",
-        "customer_address": "acb",
+        "customer_name": `${$("#firstName").val()} ${$("#lastName").val()}`,
+        "customer_address": $("#address").val(),
         "terms_conditions": "abc",
         "item": [
         ],
-        "sub_total": "abc",
-        "tax": "abc",
-        "total": "ac",
+        "sub_total": $("#sub-total").text(),
+        "tax": $("#tax").val(),
+        "total": $("#total").text(),
     }
 
     $.ajax({
@@ -64,9 +66,29 @@ function exportInvoice() {
         url: "/export",
         data: JSON.stringify(data),
         contentType: "application/json",
-        dataType : "json",
-        success: function (response) {
-            console.log(response)
+        dataType: "json",
+    })
+        .always(function (res) {
+            if (res.status === 200) {
+                let pdfWindow = window.open("")
+                pdfWindow.document.write(
+                    `<iframe width="100%" height="100%" src="data:application/pdf;base64,${encodeURI(res.responseText)}"></iframe>`
+                )
+            }
+        });
+}
+
+function blockUI() {
+    $.blockUI({
+        css: {
+            backgroundColor: 'transparent',
+            border: 'none'
+        },
+        message: '<div class="lds-ring"><div></div><div></div><div></div><div></div></div>',
+        overlayCSS: {
+            backgroundColor: '##f7f7f7',
+            opacity: 0.7,
+            cursor: 'wait'
         }
     });
 }
