@@ -3,7 +3,7 @@ $(document).ready(function () {
         source: dataItemList.map((x) => x.product_name),
         select: function (event, ui) {
             $(this).val("");
-            let item = dataItemList.find((e)=> e.product_name === ui.item.value)
+            let item = dataItemList.find((e) => e.product_name === ui.item.value)
             $(".product-list").prepend(`<li class="list-group-item d-flex justify-content-between lh-condensed">
                                             <div>
                                                 <h6 class="my-0">${item.product_name.substring(0, item.product_name.length - 12)}</h6>
@@ -13,9 +13,10 @@ $(document).ready(function () {
                                         </li>`)
             let subTotal = 0
             $(".price").toArray().forEach(element => {
-                subTotal += parseInt($(element).text().replaceAll(".",""))
+                subTotal += parseInt($(element).text().replaceAll(".", ""))
             });
             $("#sub-total").text(new Intl.NumberFormat("en-DE").format(subTotal))
+            calcTotal();
             return false;
         }
     })
@@ -25,7 +26,50 @@ $(document).ready(function () {
                 .append(`<pre><a class="dropdown-item" href="#">${item.label}</a></pre>`)
                 .appendTo(ul);
         };;
+    $("#tax").on("change", (e) => {
+        calcTotal();
+    })
 });
+
+function calcTotal() {
+    let subTotal = parseInt($("#sub-total").text().replaceAll(".", ""));
+    let tax = parseFloat($("#tax").val())
+    if (!isNaN(tax)) {
+        let total = isNaN(subTotal) ? "" : new Intl.NumberFormat("en-DE").format(subTotal * tax + subTotal);
+        $("#total").text(total)
+    }
+}
+
+function exportInvoice() {
+
+    let data = {
+        "invoice_date": new Date().toLocaleString(),
+        "invoice_num": "aaa",
+        "product_name": "Abc",
+        "bank_num": "XXX-XXX-XXX",
+        "bank_account_name": "ABC Company",
+        "bank_name": "VCB",
+        "customer_name": "ABC",
+        "customer_address": "acb",
+        "terms_conditions": "abc",
+        "item": [
+        ],
+        "sub_total": "abc",
+        "tax": "abc",
+        "total": "ac",
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "/export",
+        data: JSON.stringify(data),
+        contentType: "application/json",
+        dataType : "json",
+        success: function (response) {
+            console.log(response)
+        }
+    });
+}
 
 var dataItemList = [
     {

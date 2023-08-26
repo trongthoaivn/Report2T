@@ -10,8 +10,8 @@ def trigger_name_data(value: str, style: BeautifulSoup):
         text_prop["fo:color"] = "#c9211e"
 
 
-input_path = "./Template/template.xlsx"
-output_path = "./"
+input_path = "/Template/template.xlsx"
+output_path = "/"
 data = {
     "invoice_date": "aaa",
     "invoice_num": "aaa",
