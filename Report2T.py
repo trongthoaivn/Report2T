@@ -291,7 +291,7 @@ class Report2T:
             self.helper.convert(command)
 
             # remove temp files
-            os.remove(self.input_file_path)
+            #os.remove(self.input_file_path)
         except Exception as ex:
             raise Exception(
                 f"Could not execute convert . (command={command}, Exception={ex}))"

@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, Response
 from Report2T import Report2T
-from Config import OutputFormat
+from Config import OutputFormat, TriggerTarget
+from StyleTrigger import StyleTrigger
+from bs4 import BeautifulSoup
 import os
 import base64
 
@@ -11,6 +13,12 @@ app = Flask(
     static_folder="static",
     template_folder="static",
 )
+
+def sale_style(value: str, style: BeautifulSoup):
+    text_prop = style.find("style:text-properties")
+    text_prop["style:text-line-through-type"] = "single"
+    text_prop["fo:color"] = "#ffffff"
+    text_prop["style:use-window-font-color"] = "false"
 
 
 @app.route("/")
@@ -26,6 +34,12 @@ def export_invoice():
     input_file_path = os.path.join(current_path, "Template", "template.xlsx")
     output_dir_path = os.path.join(current_path, "Template")
     report_instance = Report2T(input_file_path, output_dir_path, OutputFormat.PDF, data)
+    # add image
+    if data["product_img"] != "":
+        report_instance.add_image("product_image", os.path.join(current_path, "static", data["product_img"]))
+        
+    report_instance.add_style(StyleTrigger("sale", "text:p", TriggerTarget.PARENT, sale_style))
+        
     report_instance.exec_convert()
 
     output_file_path = os.path.join(current_path, "Template", "template.pdf")
@@ -39,4 +53,4 @@ def export_invoice():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)

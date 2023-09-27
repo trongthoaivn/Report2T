@@ -7,7 +7,7 @@
 }
 
 .ui-menu-item-wrapper {
-    max-width: 415px;
+    max-width: 514px;
     overflow: hidden;
 }
 
@@ -20,6 +20,14 @@
     position: relative;
     width: 80px;
     height: 80px;
+}
+
+.strike{
+    text-decoration: line-through;
+}
+
+.ui-helper-hidden-accessible{
+    display: none;
 }
 
 .lds-ring div {

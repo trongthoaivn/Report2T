@@ -4,19 +4,38 @@ $(document).ready(function () {
         select: function (event, ui) {
             $(this).val("");
             let item = dataItemList.find((e) => e.product_name === ui.item.value)
-            $(".product-list").prepend(`<li class="list-group-item d-flex justify-content-between lh-condensed">
-                                            <div>
+            $(".product-list").prepend(`<li class="list-group-item d-flex justify-content-between lh-condensed product-item" product-id="${item.id}">
+                                            <div class="me-3">
+                                                <input class="enable-price" type="checkbox" checked>
+                                            </div>
+                                            <div class="ms-2">
                                                 <h6 class="my-0">${item.product_name.substring(0, item.product_name.length - 12)}</h6>
                                                 <small class="text-muted">${item.product_name.substring(item.product_name.length - 12, item.product_name.length)}</small>
                                             </div>
-                                            <span class="text-muted price">${item.product_price}</span>
+                                            <div>
+                                                <span class="text-muted price">${item.product_price}</span>
+                                            </div>
                                         </li>`)
+
             let subTotal = 0
             $(".price").toArray().forEach(element => {
                 subTotal += parseInt($(element).text().replaceAll(".", ""))
             });
+
             $("#sub-total").text(new Intl.NumberFormat("en-DE").format(subTotal))
             calcTotal();
+
+            $(".enable-price").on("change", (e) => {
+                $(e.currentTarget).parents("li").children().find(".price").toggleClass("strike");
+
+                let subTotal = 0
+                $(".price").not(".strike").toArray().forEach(element => {
+                    subTotal += parseInt($(element).text().replaceAll(".", ""))
+                });
+
+                $("#sub-total").text(new Intl.NumberFormat("en-DE").format(subTotal))
+                calcTotal();
+            })
             return false;
         }
     })
@@ -26,6 +45,7 @@ $(document).ready(function () {
                 .append(`<pre><a class="dropdown-item" href="#">${item.label}</a></pre>`)
                 .appendTo(ul);
         };;
+
     $("#tax").on("change", (e) => {
         calcTotal();
     })
@@ -44,18 +64,48 @@ function calcTotal() {
 
 function exportInvoice() {
 
+    let items = []
+    for(let idx = 1; idx <= 12; idx++ ){
+        let product = {
+            "display_order" : "",
+            "product_name": "",
+            "product_img": "",
+            "product_price": "",
+            "total" : "",
+            "is_price": ""
+        }
+        items.push(product)
+    }
+    let  idx = Array.from($(".product-item")).length;
+    Array.from($(".product-item")).reverse().forEach((element) => {
+        let product = dataItemList.find((e) => { return e.id === parseInt($(element).attr("product-id"))});
+        let isPrice = $(element).children().find(".enable-price").is(":checked");
+
+        items.push({
+            "display_order" : idx,
+            "product_name": product.product_name,
+            "product_img": product.product_img,
+            "product_price": product.product_price,
+            "total" : !isPrice ? 0 : product.product_price,
+            "is_price": !isPrice ? "@sale@" : ""
+        });
+        idx--;
+    });
+
+    items = items.reverse().slice(0, 12)
+
     let data = {
         "invoice_date": new Date().toLocaleString(),
         "invoice_num": Math.floor(Math.random() * 10001),
-        "product_name": "Abc",
-        "bank_num": "123-456-789",
-        "bank_account_name": "ABC Company",
-        "bank_name": "VCB",
+        "product_name": +items[0].product_name,
+        "product_img" : items[0].product_img,
+        "bank_num": $("#cc-number").val(),
+        "bank_account_name": $("#cc-name").val(),
+        "bank_name": $("#cc-bank").val(),
         "customer_name": `${$("#firstName").val()} ${$("#lastName").val()}`,
         "customer_address": $("#address").val(),
-        "terms_conditions": "abc",
-        "item": [
-        ],
+        "terms_conditions": "Lorem ipsum dolor sit amet. Ea unde eveniet in pariatur quisquam nam nihil vitae sit culpa quos ad Quis itaque eum dolorum veritatis! Est ipsam explicabo hic ducimus aperiam vel similique modi est temporibus quasi eum sint cupiditate. Est culpa voluptatem qui voluptatum placeat ad tempore officiis non minima consequatur qui omnis praesentium ea reprehenderit atque quo vero accusamus.",
+        "item": items,
         "sub_total": $("#sub-total").text(),
         "tax": $("#tax").val(),
         "total": $("#total").text(),
